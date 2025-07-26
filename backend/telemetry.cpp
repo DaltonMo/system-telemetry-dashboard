@@ -132,7 +132,7 @@ int main() {
 
         // serialize to json
         nlohmann::json j;
-        j["cpuUsage"] = data.cpuUsage;
+        j["cpuUsage"] = static_cast<int>(data.cpuUsage);
         j["memoryTotal"] = data.memoryTotal;
         j["memoryAvailable"] = data.memoryAvailable;
         j["timestamp"] = data.timestamp;
