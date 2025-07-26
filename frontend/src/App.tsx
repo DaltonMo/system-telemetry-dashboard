@@ -8,23 +8,49 @@ import {
   Legend,
   ResponsiveContainer,
 } from "recharts";
-import testData from "./telemetry.json";
 import "./App.css";
 
 interface TelemetryData {
   cpuUsage: number;
-  memoryUsed: number;
+  memoryAvailable: number;
   memoryTotal: number;
   timestamp: string;
 }
 
 function App() {
-  const data: TelemetryData = testData;
+  const [data, setData] = useState<TelemetryData | null>(null);
+
+  useEffect(() => {
+    const fetchData = () => {
+      fetch("/telemetry.json")
+        .then((response) => {
+          if (!response.ok) throw new Error("Fetch failed");
+          return response.json();
+        })
+        .then((jsonData) => {
+          setData({
+            ...jsonData,
+            memoryAvailable: (jsonData.memoryAvailable / 1024 / 1024).toFixed(
+              1,
+            ),
+            memoryTotal: (jsonData.memoryTotal / 1024 / 1024).toFixed(1),
+          });
+        })
+        .catch(console.error);
+    };
+
+    fetchData();
+    const interval = setInterval(fetchData, 5000);
+    return () => clearInterval(interval);
+  }, []);
+
+  if (!data) return <p>Loading...</p>;
+
   const chartData = [
     {
       name: "Current",
       cpuUsage: data.cpuUsage,
-      memoryUsed: data.memoryUsed,
+      memoryAvailable: data.memoryAvailable,
       memoryTotal: data.memoryTotal,
     },
   ];
@@ -71,18 +97,19 @@ function App() {
           }}
         >
           <p>
-            Memory Used: {data.memoryUsed} MB out of {data.memoryTotal} MB
+            Memory Available: {data.memoryAvailable} GB out of{" "}
+            {data.memoryTotal} GB
           </p>
           <ResponsiveContainer width="100%" height={300}>
             <BarChart data={chartData}>
               <XAxis dataKey="name" />
-              <YAxis domain={[0, data.memoryTotal]} />
+              <YAxis domain={[0, data.memoryTotal * 1]} />
               <Tooltip />
               <Legend />
               <Bar
-                dataKey="memoryUsed"
+                dataKey="memoryAvailable"
                 fill="#007bff"
-                name="Memory Used (MB)"
+                name="Memory Available (GB)"
               />
             </BarChart>
           </ResponsiveContainer>
